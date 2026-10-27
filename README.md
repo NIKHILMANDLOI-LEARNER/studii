@@ -203,6 +203,20 @@ npm run dev   # Starts Vite development server on http://localhost:3000
 
 ---
 
+## 🚀 Deploy to Render
+
+The root-level `render.yaml` defines two separate services: a Node web service for the API and a static site for the Vite frontend. The frontend receives the API service's public URL from Render and sends requests to its `/api` endpoints.
+
+1. Push the repository, including `render.yaml`, to GitHub.
+2. In Render, choose **New → Blueprint**, select this repository and deploy the Blueprint.
+3. When prompted, provide `MONGODB_URI` from MongoDB Atlas. In Atlas, create a database user, allow Render to connect under **Network Access**, then copy the cluster's **Drivers** connection string and replace its username, password, and database name. URL-encode special characters in the password.
+4. Provide `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` if you want resource uploads to persist. Without Cloudinary, uploaded files use the service's temporary filesystem and may disappear on restart or redeploy.
+5. Render generates `JWT_SECRET`. Wait for both services to deploy, then open the frontend service's `onrender.com` URL.
+
+Keep database and Cloudinary credentials in Render's environment settings—never commit them to the repository. The backend requires a valid `MONGODB_URI` in production and will exit rather than silently use a temporary in-memory database.
+
+---
+
 ## 🔑 Demo Logins (After running `npm run seed`)
 - **Teacher Account**: `teacher@demo.com` / `password123` (Teacher Code: `TCH-DEMO`)
 - **Student Account**: `student@demo.com` / `password123` (Student ID: `STU-1001`)

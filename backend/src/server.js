@@ -25,13 +25,31 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/teacher', require('./routes/teacherRoutes'));
-app.use('/api/student', require('./routes/studentRoutes'));
-app.use('/api/parent', require('./routes/parentRoutes'));
-app.use('/api/resources', require('./routes/resourceRoutes'));
-app.use('/api/analytics', require('./routes/analyticsRoutes'));
+// API Routes - mounted on /api/* and root fallback /* for flexible reverse proxying
+const authRoutes = require('./routes/authRoutes');
+const teacherRoutes = require('./routes/teacherRoutes');
+const studentRoutes = require('./routes/studentRoutes');
+const parentRoutes = require('./routes/parentRoutes');
+const resourceRoutes = require('./routes/resourceRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
+
+app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
+app.use('/api/teacher', teacherRoutes);
+app.use('/teacher', teacherRoutes);
+
+app.use('/api/student', studentRoutes);
+app.use('/student', studentRoutes);
+
+app.use('/api/parent', parentRoutes);
+app.use('/parent', parentRoutes);
+
+app.use('/api/resources', resourceRoutes);
+app.use('/resources', resourceRoutes);
+
+app.use('/api/analytics', analyticsRoutes);
+app.use('/analytics', analyticsRoutes);
 
 // 404 Handler
 app.use((req, res, next) => {
