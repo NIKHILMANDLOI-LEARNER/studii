@@ -221,3 +221,5 @@ Keep database and Cloudinary credentials in Render's environment settings—neve
 - **Teacher Account**: `teacher@demo.com` / `password123` (Teacher Code: `TCH-DEMO`)
 - **Student Account**: `student@demo.com` / `password123` (Student ID: `STU-1001`)
 - **Parent Account**: `parent@demo.com` / `password123` (Pre-linked to 2 students)
+
+- **Explanation video**:'https://drive.google.com/file/d/162oq1wNBUwiqhMPuzv6Sr3A-asrJLuLp/view?usp=sharing' 
