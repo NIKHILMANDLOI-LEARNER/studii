@@ -4,11 +4,7 @@ const path = require('path');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
-// Load environment variables
 dotenv.config();
-
-// Connect to Database
-connectDB();
 
 const app = express();
 
@@ -52,8 +48,16 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Tuition Management API running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+
+connectDB()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Tuition Management API running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to start the API:', error);
+    process.exit(1);
+  });
 
 module.exports = app;
