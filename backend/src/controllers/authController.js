@@ -114,7 +114,9 @@ exports.register = async (req, res) => {
     console.error('Registration error:', error);
     if (error.code === 11000) {
       const duplicateErrorDetails = `${error.message || ''} ${JSON.stringify(error.keyPattern || {})}`;
+      const indexName = duplicateErrorDetails.match(/index:\s+([^\s]+)\s+dup key/i)?.[1];
       const conflictingField = Object.keys(error.keyPattern || {})[0] ||
+        (indexName ? indexName.replace(/_\d+$/, '') : null) ||
         ['email', 'teacherCode', 'studentId'].find((field) =>
           duplicateErrorDetails.includes(field)
         );
@@ -126,7 +128,7 @@ exports.register = async (req, res) => {
       return res.status(409).json({
         success: false,
         message: duplicateMessages[conflictingField] ||
-          'A unique account value conflicted. Please try again or contact support.'
+          `Duplicate value in database index${indexName ? ` ${indexName}` : ''}. Check the backend database indexes.`
       });
     }
     res.status(500).json({
