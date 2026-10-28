@@ -15,6 +15,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: process.env.NODE_ENV === 'production' ? 15000 : 3000
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    await migrateOptionalUserIdIndexes();
     await autoSeedIfEmpty();
   } catch (error) {
     console.warn(`⚠️ Could not connect to MongoDB: ${error.message}`);
@@ -33,6 +34,8 @@ const connectDB = async () => {
       const conn = await mongoose.connect(memUri);
       console.log(`✅ Connected to in-memory MongoDB: ${conn.connection.host}`);
 
+      await migrateOptionalUserIdIndexes();
+
       // Seed the in-memory database with demo accounts immediately
       await autoSeedIfEmpty(true);
     } catch (memError) {
@@ -40,6 +43,62 @@ const connectDB = async () => {
       process.exit(1);
     }
   }
+};
+
+const migrateOptionalUserIdIndexes = async () => {
+  const User = require('../models/User');
+  const collectionName = User.collection.collectionName;
+  const database = mongoose.connection.db;
+  const collectionExists = await database
+    .listCollections({ name: collectionName }, { nameOnly: true })
+    .hasNext();
+
+  if (!collectionExists) {
+    await database.createCollection(collectionName);
+  }
+
+  // Remove legacy explicit nulls before replacing sparse unique indexes.
+  await User.collection.updateMany(
+    { teacherCode: { $type: 'null' } },
+    { $unset: { teacherCode: '' } }
+  );
+  await User.collection.updateMany(
+    { studentId: { $type: 'null' } },
+    { $unset: { studentId: '' } }
+  );
+
+  const indexes = await User.collection.indexes();
+  for (const [field, indexName] of [
+    ['teacherCode', 'teacherCode_1'],
+    ['studentId', 'studentId_1']
+  ]) {
+    const existingIndex = indexes.find(
+      (index) => index.name === indexName && index.unique
+    );
+    const hasStringOnlyPartialFilter =
+      existingIndex?.partialFilterExpression?.[field]?.$type === 'string';
+
+    if (existingIndex && !hasStringOnlyPartialFilter) {
+      await User.collection.dropIndex(indexName);
+    }
+  }
+
+  await User.collection.createIndex(
+    { teacherCode: 1 },
+    {
+      unique: true,
+      partialFilterExpression: { teacherCode: { $type: 'string' } },
+      name: 'teacherCode_1'
+    }
+  );
+  await User.collection.createIndex(
+    { studentId: 1 },
+    {
+      unique: true,
+      partialFilterExpression: { studentId: { $type: 'string' } },
+      name: 'studentId_1'
+    }
+  );
 };
 
 const autoSeedIfEmpty = async (forceSeed = false) => {

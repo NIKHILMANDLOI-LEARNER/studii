@@ -31,16 +31,12 @@ const userSchema = new mongoose.Schema(
     // For Teachers: Unique identifier code students use to join this teacher's center
     teacherCode: {
       type: String,
-      unique: true,
-      sparse: true,
       uppercase: true,
       trim: true
     },
     // For Students: Unique student admission/registration ID
     studentId: {
       type: String,
-      unique: true,
-      sparse: true,
       uppercase: true,
       trim: true
     },
@@ -77,5 +73,24 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
+
+// Optional IDs should be unique only when they contain a string value.
+// This permits multiple accounts with absent IDs, including legacy nulls.
+userSchema.index(
+  { teacherCode: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { teacherCode: { $type: 'string' } },
+    name: 'teacherCode_1'
+  }
+);
+userSchema.index(
+  { studentId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { studentId: { $type: 'string' } },
+    name: 'studentId_1'
+  }
+);
 
 module.exports = mongoose.model('User', userSchema);

@@ -110,9 +110,16 @@ exports.register = async (req, res) => {
   } catch (error) {
     console.error('Registration error:', error);
     if (error.code === 11000) {
+      const conflictingField = Object.keys(error.keyPattern || {})[0];
+      const duplicateMessages = {
+        email: 'This email is already registered. Please sign in or use another email.',
+        teacherCode: 'A teacher code conflict occurred. Please try registering again.',
+        studentId: 'A student ID conflict occurred. Please try registering again.'
+      };
       return res.status(409).json({
         success: false,
-        message: 'A user with this email or generated ID already exists. Please try again.'
+        message: duplicateMessages[conflictingField] ||
+          'A unique account value conflicted. Please try again or contact support.'
       });
     }
     res.status(500).json({
