@@ -76,6 +76,19 @@ const migrateOptionalUserIdIndexes = async () => {
   );
 
   const indexes = await User.collection.indexes();
+  // Remove unique indexes left behind by fields from older User schemas
+  // (for example `username`, which is not part of the current model).
+  for (const index of indexes) {
+    const hasUnknownField = Object.keys(index.key).some(
+      (field) => field !== '_id' && !User.schema.path(field)
+    );
+
+    if (index.unique && hasUnknownField) {
+      await User.collection.dropIndex(index.name);
+      console.log(`Removed obsolete unique index ${index.name} from ${collectionName}`);
+    }
+  }
+
   for (const field of ['teacherCode', 'studentId']) {
     const fieldIndexes = indexes.filter(
       (index) => index.unique && Object.prototype.hasOwnProperty.call(index.key, field)
