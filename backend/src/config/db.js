@@ -63,23 +63,34 @@ const migrateOptionalUserIdIndexes = async () => {
     { $unset: { teacherCode: '' } }
   );
   await User.collection.updateMany(
+    { teacherCode: '' },
+    { $unset: { teacherCode: '' } }
+  );
+  await User.collection.updateMany(
     { studentId: { $type: 'null' } },
+    { $unset: { studentId: '' } }
+  );
+  await User.collection.updateMany(
+    { studentId: '' },
     { $unset: { studentId: '' } }
   );
 
   const indexes = await User.collection.indexes();
-  for (const [field, indexName] of [
-    ['teacherCode', 'teacherCode_1'],
-    ['studentId', 'studentId_1']
-  ]) {
-    const existingIndex = indexes.find(
-      (index) => index.name === indexName && index.unique
+  for (const field of ['teacherCode', 'studentId']) {
+    const fieldIndexes = indexes.filter(
+      (index) => index.unique && Object.prototype.hasOwnProperty.call(index.key, field)
     );
-    const hasStringOnlyPartialFilter =
-      existingIndex?.partialFilterExpression?.[field]?.$type === 'string';
 
-    if (existingIndex && !hasStringOnlyPartialFilter) {
-      await User.collection.dropIndex(indexName);
+    for (const index of fieldIndexes) {
+      const isExpectedIndex =
+        index.key[field] === 1 &&
+        Object.keys(index.key).length === 1 &&
+        index.partialFilterExpression?.[field]?.$type === 'string';
+
+      if (!isExpectedIndex) {
+        await User.collection.dropIndex(index.name);
+        console.log(`Removed legacy unique index ${index.name} from ${collectionName}`);
+      }
     }
   }
 
