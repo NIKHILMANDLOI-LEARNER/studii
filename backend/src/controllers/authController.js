@@ -26,7 +26,10 @@ const generateUniqueCode = (prefix, length = 6) => {
 // @desc    Register a new user (Teacher, Student, or Parent)
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role, teacherCode, classLevel, subjects, phone, studentIdsToLink } = req.body;
+    const { name, password, role, teacherCode, classLevel, subjects, phone, studentIdsToLink } = req.body;
+    const email = typeof req.body.email === 'string'
+      ? req.body.email.trim().toLowerCase()
+      : '';
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -110,7 +113,11 @@ exports.register = async (req, res) => {
   } catch (error) {
     console.error('Registration error:', error);
     if (error.code === 11000) {
-      const conflictingField = Object.keys(error.keyPattern || {})[0];
+      const duplicateErrorDetails = `${error.message || ''} ${JSON.stringify(error.keyPattern || {})}`;
+      const conflictingField = Object.keys(error.keyPattern || {})[0] ||
+        ['email', 'teacherCode', 'studentId'].find((field) =>
+          duplicateErrorDetails.includes(field)
+        );
       const duplicateMessages = {
         email: 'This email is already registered. Please sign in or use another email.',
         teacherCode: 'A teacher code conflict occurred. Please try registering again.',
