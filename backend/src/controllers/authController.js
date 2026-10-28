@@ -67,8 +67,8 @@ exports.register = async (req, res) => {
       password,
       role: userRole,
       phone,
-      teacherCode: assignedTeacherCode,
-      studentId: assignedStudentId
+      ...(assignedTeacherCode ? { teacherCode: assignedTeacherCode } : {}),
+      ...(assignedStudentId ? { studentId: assignedStudentId } : {})
     });
 
     // If Student, create corresponding StudentProfile linked to teacher
@@ -108,6 +108,13 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Registration error:', error);
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: 'A user with this email or generated ID already exists. Please try again.'
+      });
+    }
     res.status(500).json({
       success: false,
       message: 'Registration error',
